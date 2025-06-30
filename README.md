@@ -67,25 +67,28 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash zswap.enabled=1"
 
 9. Switch from Mozilla Firefox to Midori or Falkon browser.
 
-10. This part is optional, just in case your 'lscpu' output in step 3 provides you unpleasant result for CPU minimum MHz. Please be informed that this step is not a form of overclocking. The process is just for you to have an idea to get the most potential of your CPU cores to its maximum performance.
+10. This part is optional. Use it if your `lscpu` output shows an unusually low minimum CPU MHz, and you want to improve baseline performance.
 
-Pros: Good for cheap computers with base processor speeds of 1.8 ghz below just like mine.
-Cons: More battery consumption if you are using a laptop or more power consumption from the AC power supply.
+Please note: **this is not overclocking**. The goal is simply to optimize your CPU to run closer to its full potential.
 
-👉 lscpu
+Pros: Ideal for low-end systems with base CPU speeds below 1.8 GHz (like mine). 
 
-/*
-just like what you have done in step 3, check the max and min Mhz of your CPU cores, the goal here is to make them equal and not to overclock.
-*/
+Cons: Slightly higher power consumption, especially on laptops or when running on AC power.
 
-👉 watch -n1 "grep 'MHz' /proc/cpuinfo"
+A 👉 lscpu
 
 /*
-Observe how your CPU cores perform, you will see that most of your CPU cores are just running in minimum Mhz
+This will display the minimum and maximum supported CPU MHz. The goal is to make these values equal to prevent unnecessary downclocking.
+*/
+
+B 👉 watch -n1 "grep 'MHz' /proc/cpuinfo"
+
+/*
+This command allows you to monitor CPU frequency behavior in real-time. You will likely notice that most cores stay at minimum MHz unless under load.
 */
 
 
-👉 sudo nano /etc/default/grub
+C 👉 sudo nano /etc/default/grub
 
 /*
 look for this section
@@ -98,9 +101,9 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash zswap.enabled=1 intel_pstate=disable"
 */
 
 
-👉 sudo update-grub
+D 👉 sudo update-grub
 
-👉 sudo reboot
+E 👉 sudo reboot
 
 
 /*
@@ -108,46 +111,75 @@ once restarted, run the below command
 */
 
 
-👉 cat /sys/devices/system/cpu/intel_pstate/status
+F 👉 cat /sys/devices/system/cpu/intel_pstate/status
 
 /*
-the output should no longer be passive or active, it should return something about 'No such file or directory'
+the output should no longer be passive or active, it should return something like 'No such file or directory'
 */
 
 
-👉 cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver
+G 👉 cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver
 
 /*
 the returning output should be 'acpi-cpufreq'
 */
 
-👉 sudo systemctl stop thermald
-👉 sudo systemctl disable thermald
-👉 sudo systemctl stop tlp
-👉 sudo systemctl disable tlp
+
+/*
+Please make sure you have completed **Bash commands A–G of Step 10** before proceeding.
+
+The following bash commands **H–Q** only apply during the current runtime session which means it will reset after every reboot. These configurations are not persistent unless scripted.
+
+Please consider creating a shell script that you can run from your desktop or trigger during login to avoid repeating the steps.
+
+All Changes made before this point i.e. GRUB modifications, are persistent and survive reboots.
+
+The steps below are temporary and must be re-applied each session—unless automated.
+*/
+
+H 👉 sudo systemctl stop thermald
+I 👉 sudo systemctl disable thermald
+J 👉 sudo systemctl stop tlp
+K 👉 sudo systemctl disable tlp
 
 
-👉 sudo apt install linux-tools-common linux-tools-$(uname -r)
-👉 sudo cpupower frequency-set -g performance
+L 👉 sudo apt install linux-tools-common linux-tools-$(uname -r)
+/*
+Just in case this is not yet installed, please skip if you are done and move to the next command
+*/
+M 👉 sudo cpupower frequency-set -g performance
 
 
-👉 for i in 0 1 2 3; do
+N 👉 for i in 0 1 2 3; do
   echo userspace | sudo tee /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor
   echo 2560000 | sudo tee /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
 done
 
+/*
+The value 2560000 represents 2.56 GHz — which is the maximum turbo frequency where the above command is tested.
 
-👉 for i in 0 1 2 3; do
+Please make sure to set this value according to the maximum capacity of your CPU and do not exceed your rated max frequency.
+*/
+
+
+O 👉 for i in 0 1 2 3; do
   echo performance | sudo tee /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor
 done
 
-👉 for i in 0 1 2 3; do
-  echo 100 | sudo tee /sys/devices/system/cpu/cpu$i/cpufreq/energy_performance_preference
-done
+P 👉 systemctl suspend
+/*
+This step puts the system into sleep mode. Upon waking up, the CPU frequency often locks at higher values.
 
+After waking and logging back in, monitor CPU frequencies again.
+*/
 
-👉 watch -n1 "grep 'MHz' /proc/cpuinfo"
+Q 👉 watch -n1 "grep 'MHz' /proc/cpuinfo"
 
 /*
-Observe again the improvement
+You should now observe that the CPU cores are maintaining higher frequencies more consistently — behaving like it just drank three espresso shots and turned to berserk mode.
+
+Nothing illegal was done here. No overclocking, no warranty violations, no shady BIOS hacks.
+There is no reason to call the Bureau of Fire, EMS, or 911 for thermal arson.
+
+Just pure Linux tricks, caffeine, and desperation from low MHz pain.
 */
