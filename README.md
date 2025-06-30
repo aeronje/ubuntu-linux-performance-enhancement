@@ -66,3 +66,88 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash zswap.enabled=1"
 👉 sudo sysctl -p
 
 9. Switch from Mozilla Firefox to Midori or Falkon browser.
+
+10. This part is optional, just in case your 'lscpu' output in step 3 provides you unpleasant result for CPU minimum MHz. Please be informed that this step is not a form of overclocking. The process is just for you to have an idea to get the most potential of your CPU cores to its maximum performance.
+
+Pros: Good for cheap computers with base processor speeds of 1.8 ghz below just like mine.
+Cons: More battery consumption if you are using a laptop or more power consumption from the AC power supply.
+
+👉 lscpu
+
+/*
+just like what you have done in step 3, check the max and min Mhz of your CPU cores, the goal here is to make them equal and not to overclock.
+*/
+
+👉 watch -n1 "grep 'MHz' /proc/cpuinfo"
+
+/*
+Observe how your CPU cores perform, you will see that most of your CPU cores are just running in minimum Mhz
+*/
+
+
+👉 sudo nano /etc/default/grub
+
+/*
+look for this section
+
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash zswap.enabled=1"
+
+then replace it with this
+
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash zswap.enabled=1 intel_pstate=disable"
+*/
+
+
+👉 sudo update-grub
+
+👉 sudo reboot
+
+
+/*
+once restarted, run the below command
+*/
+
+
+👉 cat /sys/devices/system/cpu/intel_pstate/status
+
+/*
+the output should no longer be passive or active, it should return something about 'No such file or directory'
+*/
+
+
+👉 cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver
+
+/*
+the returning output should be 'acpi-cpufreq'
+*/
+
+👉 sudo systemctl stop thermald
+👉 sudo systemctl disable thermald
+👉 sudo systemctl stop tlp
+👉 sudo systemctl disable tlp
+
+
+👉 sudo apt install linux-tools-common linux-tools-$(uname -r)
+👉 sudo cpupower frequency-set -g performance
+
+
+👉 for i in 0 1 2 3; do
+  echo userspace | sudo tee /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor
+  echo 2560000 | sudo tee /sys/devices/system/cpu/cpu$i/cpufreq/scaling_min_freq
+done
+
+
+👉 for i in 0 1 2 3; do
+  echo performance | sudo tee /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor
+done
+
+👉 for i in 0 1 2 3; do
+  echo 100 | sudo tee /sys/devices/system/cpu/cpu$i/cpufreq/energy_performance_preference
+done
+
+
+👉 watch -n1 "grep 'MHz' /proc/cpuinfo"
+
+/*
+Observe again the improvement
+*/
