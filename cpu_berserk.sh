@@ -1,7 +1,7 @@
 #!/bin/bash
 # cpu_berserk.sh
 # Berserk mode activator for your cheapie trashy machines
-# Ron Penones | June 30th 2025 - Feel free to share and reproduce, the core idea is mine with some assistance of AI. Padayon!
+# Ron Penones | October 25th 2025 - Feel free to share and reproduce, the core idea is mine with some assistance of AI. Padayon!
 
 echo "[+] Stopping thermald (prevents unwanted throttling)..."
 sudo systemctl stop thermald
@@ -21,5 +21,7 @@ for i in 0 1 2 3; do
   echo performance | sudo tee /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor > /dev/null
 done
 
-echo "[+] Suspending now, please re-login and expect berserk mode upon resume."
-systemctl suspend
+echo "[+] Sleeping for 15 seconds, will auto-wake via RTC..."
+sudo rtcwake -m mem -s 15
+
+echo "[+] System woke up — berserk mode active!"
